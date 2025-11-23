@@ -1,4 +1,5 @@
 
+from logging import config
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
@@ -192,6 +193,9 @@ def run_and_visualize_experiment(config: dict):
     dataset, model, trainer = setup_experiment_config(config)
     
     num_params = sum(parameter.numel() for parameter in model.parameters()) # calculate total number of parameters of the model
+    memory_bytes = num_params * 4  # 4 bytes for each float32 parameter
+    memory_mb = memory_bytes / (1024 ** 2)
+    print(f"Model size: {memory_mb:.2f} MB")
     space_dim = (config['p'] ** 2) * 2**4
     pos_dim = config['p'] ** 2
     print(f"num_parameters: {num_params:,}; space_dim: {space_dim:,}; pos_dim: {pos_dim:,}")
