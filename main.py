@@ -191,7 +191,7 @@ def run_and_visualize_experiment(config: dict):
 
     dataset, model, trainer = setup_experiment_config(config)
     
-    num_params = sum(p.numel() for p in model.parameters())
+    num_params = sum(parameter.numel() for parameter in model.parameters()) # calculate total number of parameters of the model
     space_dim = (config['p'] ** 2) * 2**4
     pos_dim = config['p'] ** 2
     print(f"num_parameters: {num_params:,}; space_dim: {space_dim:,}; pos_dim: {pos_dim:,}")
