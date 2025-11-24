@@ -1,5 +1,4 @@
 
-from logging import config
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
@@ -179,16 +178,16 @@ def visualize_experiment(config: dict, dataset, model, animate: bool = False):
                 plt.close(fig)
                 display(HTML(anim.to_jshtml()))
     
+def print_info(string: str):
+    print("\n" + "="*80)
+    print(string)
+    print("="*80 + "\n")
 
 def run_and_visualize_experiment(config: dict):
     """
     Runs a single experiment based on a configuration dictionary and visualizes the results.
     """
-    print("="*80)
-    print(f"Starting Experiment: {config['latex_title']} (p={config['p']})")
-    print("="*80)
-
-    # 1. Setup
+    print_info(f"Starting Experiment: {config['latex_title']} mod {config['p']}")
 
     dataset, model, trainer = setup_experiment_config(config)
     
@@ -203,10 +202,7 @@ def run_and_visualize_experiment(config: dict):
     if config.get('print_test_len', False):
         print(len(dataset.test_data))
 
-    # 2. Training
     train_model(trainer, model, dataset, config)
-    
-    # 3. Visualization 
     visualize_experiment(config, dataset, model)
 
-    print("\n✅ Experiment Complete.\n")
+    print_info("Experiment Complete.")
