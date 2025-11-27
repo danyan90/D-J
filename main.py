@@ -279,29 +279,29 @@ class Experiment:
         self._plot_single_prediction_histogram(latex_title, p)
         self._plot_probability_evolution(latex_title, p)
     
-    def _plot_histogram(self, latex_title: str, p: int) -> None:
+    def _plot_histogram(self) -> None:
         """Plot histogram of all predictions."""
         plt.figure(figsize=(10, 5))
-        plt.bar(range(p), self.model.loss_dictionary['counts_hist_all'])
-        plt.title(f"Histogram: {latex_title} mod {p} for {self.dataset.test_data.tolist()}", 
+        plt.bar(range(self.experiment_parameters['p']), self.model.loss_dictionary['counts_hist_all'])
+        plt.title(f"Histogram: {self.experiment_parameters['latex_title']} mod {self.experiment_parameters['p']} for {self.dataset.test_data.tolist()}", 
                   fontsize=10)
         plt.xlabel("Answer index")
         plt.ylabel("Prediction count")
         plt.tight_layout()
         plt.show()
     
-    def _plot_single_prediction_histogram(self, latex_title: str, p: int) -> None:
+    def _plot_single_prediction_histogram(self) -> None:
         """Plot histogram for single prediction."""
         plt.figure(figsize=(10, 5))
-        plt.bar(range(p), self.model.loss_dictionary['prediction_mike'])
-        plt.title(f"Single prediction: {latex_title} mod {p} for {self.dataset.test_data.tolist()}", 
+        plt.bar(range(self.experiment_parameters['p']), self.model.loss_dictionary['prediction_mike'])
+        plt.title(f"Single prediction: {self.experiment_parameters['latex_title']} mod {self.experiment_parameters['p']} for {self.dataset.test_data.tolist()}", 
                   fontsize=10)
         plt.xlabel("Answer index")
         plt.ylabel("Count")
         plt.tight_layout()
         plt.show()
     
-    def _plot_probability_evolution(self, latex_title: str, p: int) -> None:
+    def _plot_probability_evolution(self) -> None:
         """Create animated plot of probability distribution evolution."""
         # Prepare probability data
         probs = []
@@ -319,7 +319,7 @@ class Experiment:
         
         # Create animation
         fig, ax = plt.subplots(figsize=(8, 4))
-        ax.set_title(f"Probability evolution: {latex_title} mod {p} for {self.dataset.test_data.tolist()}", fontsize=10)   
+        ax.set_title(f"Probability evolution: {self.experiment_parameters['latex_title']} mod {self.experiment_parameters['p']} for {self.dataset.test_data.tolist()}", fontsize=10)   
         bars = ax.bar(range(len(probs[0])), probs[0])
         
         # Dynamic y-limit based on actual data
