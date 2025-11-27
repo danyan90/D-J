@@ -60,7 +60,8 @@ class Experiment:
         self.dataset, self.model, self.trainer = self.setup_experiment_config()
         self.calculate_parameters()
         
-        if self.experiment_parameters.get('print_test_len', False):
+        if self.experiment_parameters.get('print_test_len', 
+                                          False):
             print(len(self.dataset.test_data))
         self.train_model()
         self.visualize_experiment(animate=animate)
@@ -71,7 +72,9 @@ class Experiment:
     # 3. SETUP & PREPARATION
     # ================================================================
         
-    def setup_experiment_config(self) -> Tuple[DataObject, NegMLP, NegTrainer]:
+    def setup_experiment_config(self) -> Tuple[DataObject, 
+                                               NegMLP, 
+                                               NegTrainer]:
         """Setup dataset, model, and trainer for the experiment.
         
         Returns:
@@ -79,17 +82,23 @@ class Experiment:
         """
         self.device = self.check_device()
 
-        modular_function = AppendixCFunction(self.experiment_parameters['c'], self.experiment_parameters['d'], self.experiment_parameters['p'])
-        dataset = DataObject(modular_function, split=self.experiment_parameters['split'])
+        modular_function = AppendixCFunction(self.experiment_parameters['c'], 
+                                             self.experiment_parameters['d'], 
+                                             self.experiment_parameters['p'])
+        dataset = DataObject(modular_function, 
+                             split=self.experiment_parameters['split'])
 
-        model = NegMLP(self.experiment_parameters['p'], self.experiment_parameters['embedding_dim'], self.experiment_parameters['hidden'])
+        model = NegMLP(self.experiment_parameters['p'], 
+                       self.experiment_parameters['embedding_dim'], 
+                       self.experiment_parameters['hidden'])
         
         if self.device is not None:
             model = model.to(self.device)
         else:
             model = model.to(torch.device("cpu")) # Fallback to CPU if no device is specified
 
-        trainer = NegTrainer(learning_rate=self.experiment_parameters['learning_rate'], num_negs_per_example=self.experiment_parameters['negs_per_ex'])
+        trainer = NegTrainer(learning_rate=self.experiment_parameters['learning_rate'], 
+                             num_negs_per_example=self.experiment_parameters['negs_per_ex'])
         
         return dataset, model, trainer
     
