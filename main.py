@@ -11,6 +11,10 @@ from NegSamplingMath_Unlearn_AppC_FullDataSet import NegMLP, NegTrainer
 
 
 class Experiment:
+    # ================================================================
+    # 1. INITIALIZATION & CONFIGURATION
+    # ================================================================
+    
     def __init__(self, config: dict): 
         self.experiment_parameters: dict = {} # Store experiment parameters
         self.device: torch.device = None # Device will be set up later
@@ -21,33 +25,52 @@ class Experiment:
         checked_config: dict = self.check_config(config)
         self.experiment_parameters.update(checked_config)
 
-    def train_model(self) -> None:
-        """Train the model using configured trainer. Must be called after setup_experiment_config()."""
-        # Confirm that trainer, model, and dataset are initialized
-        if self.trainer is None or self.model is None or self.dataset is None:
-            raise ValueError("Trainer, model, and dataset must be initialized before training.")
+    def check_config(self, config: dict) -> dict:
+        required_keys = ('p', 
+                         'c', 
+                         'd', 
+                         'embedding_dim', 
+                         'hidden', 
+                         'learning_rate',
+                         'negs_per_ex', 
+                         'max_steps', 
+                         'batch_size', 
+                         'weight_decay',
+                         'split', 
+                         'latex_title')
+        for key in required_keys:
+            if key not in config:
+                raise ValueError(f"Missing required config key: {key}")
+        return config    
+    
+    # ================================================================
+    # 2. MAIN EXPERIMENT METHODS
+    # ================================================================
+    
+    def run(self, animate: bool = False) -> None:
+        """Execute full experiment pipeline: setup, train, and visualize.
         
-        # Train the model using the trainer
-        self.trainer.train_model(
-            self.model,
-            self.dataset,
-            max_steps=self.experiment_parameters['max_steps'],
-            batch_size=self.experiment_parameters['batch_size'],
-            weight_decay=self.experiment_parameters['weight_decay']
-        )
-    
-    def check_device(self) -> torch.device: # for Mac mps 
-        if torch.backends.mps.is_available():
-            device = torch.device("mps")
+        Args:
+            animate: Whether to create animated visualizations (only for single-example test sets), 
+            default is False
+        """
+        self.print_info(
+            f"Starting Experiment: {self.experiment_parameters['latex_title']} mod {self.experiment_parameters['p']}")
 
-        elif torch.cuda.is_available():
-            device = torch.device("cuda")
-            
-        else:
-            device = torch.device("cpu")
-        print(f"Using device: {device}")
-        return device
-    
+        self.dataset, self.model, self.trainer = self.setup_experiment_config()
+        self.calculate_parameters()
+        
+        if self.experiment_parameters.get('print_test_len', False):
+            print(len(self.dataset.test_data))
+        self.train_model()
+        self.visualize_experiment(animate=animate)
+
+        self.print_info("Experiment Complete.")
+
+    # ================================================================
+    # 3. SETUP & PREPARATION
+    # ================================================================
+        
     def setup_experiment_config(self) -> Tuple[DataObject, NegMLP, NegTrainer]:
         """Setup dataset, model, and trainer for the experiment.
         
@@ -69,25 +92,18 @@ class Experiment:
         trainer = NegTrainer(learning_rate=self.experiment_parameters['learning_rate'], num_negs_per_example=self.experiment_parameters['negs_per_ex'])
         
         return dataset, model, trainer
+    
+    def check_device(self) -> torch.device: # for Mac mps 
+        if torch.backends.mps.is_available():
+            device = torch.device("mps")
 
-        
-    def check_config(self, config: dict) -> dict:
-        required_keys = ('p', 
-                         'c', 
-                         'd', 
-                         'embedding_dim', 
-                         'hidden', 
-                         'learning_rate',
-                         'negs_per_ex', 
-                         'max_steps', 
-                         'batch_size', 
-                         'weight_decay',
-                         'split', 
-                         'latex_title')
-        for key in required_keys:
-            if key not in config:
-                raise ValueError(f"Missing required config key: {key}")
-        return config
+        elif torch.cuda.is_available():
+            device = torch.device("cuda")
+            
+        else:
+            device = torch.device("cpu")
+        print(f"Using device: {device}")
+        return device
 
     def calculate_parameters(self) -> None:
         """Calculate and store model statistics. Must be called after setup_experiment_config()."""
@@ -115,34 +131,49 @@ class Experiment:
         memory_bytes = num_params * 4  # 4 bytes per float32
         memory_mb = memory_bytes / (1024 ** 2)  # Convert to MB
         return num_params, memory_mb
+    
+    # ================================================================
+    # 4. TRAINING
+    # ================================================================
 
-    @staticmethod
-    def print_info(string: str):
-        """Helper function to print information with formatting."""
-        print("\n" + "="*80)
-        print(string)
-        print("="*80 + "\n")
-
-    def run(self, animate: bool = False) -> None:
-        """Execute full experiment pipeline: setup, train, and visualize.
+    def train_model(self) -> None:
+        """Train the model using configured trainer. Must be called after setup_experiment_config()."""
+        # Confirm that trainer, model, and dataset are initialized
+        if self.trainer is None or self.model is None or self.dataset is None:
+            raise ValueError("Trainer, model, and dataset must be initialized before training.")
+        
+        # Train the model using the trainer
+        self.trainer.train_model(
+            self.model,
+            self.dataset,
+            max_steps=self.experiment_parameters['max_steps'],
+            batch_size=self.experiment_parameters['batch_size'],
+            weight_decay=self.experiment_parameters['weight_decay']
+        )
+    
+    # ================================================================
+    # 5. VISUALIZATION
+    # ================================================================
+    
+    def visualize_experiment(self, animate: bool = False) -> None:
+        """Visualize all experiment results. Must be called after train_model().
         
         Args:
-            animate: Whether to create animated visualizations (only for single-example test sets), 
-            default is False
+            animate: Whether to create animated visualizations for single-example test sets
         """
-        self.print_info(
-            f"Starting Experiment: {self.experiment_parameters['latex_title']} mod {self.experiment_parameters['p']}")
-
-        self.dataset, self.model, self.trainer = self.setup_experiment_config()
-        self.calculate_parameters()
+        if not hasattr(self.model, 'loss_dictionary') or not self.model.loss_dictionary:
+            raise ValueError("No training data to visualize. Call train_model() first.")
         
-        if self.experiment_parameters.get('print_test_len', False):
-            print(len(self.dataset.test_data))
-        self.train_model()
-        self.visualize_experiment(animate=animate)
-
-        self.print_info("Experiment Complete.")
-
+        # Plot all standard metrics
+        self._plot_losses()
+        self._plot_accuracies()
+        self._plot_positive_accuracies()
+        self._plot_negative_accuracies()
+        
+        # Plot animations if requested
+        if animate:
+            self._plot_animations()
+   
     def plot_metrics(self, data: List | np.ndarray, labels: List[str] | str, 
                      y_label: str, title: str, x_label: str = "Training step") -> None:
         """Plot training metrics such as loss or accuracy.
@@ -169,26 +200,9 @@ class Experiment:
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
         plt.show()
-
-    def visualize_experiment(self, animate: bool = False) -> None:
-        """Visualize all experiment results. Must be called after train_model().
-        
-        Args:
-            animate: Whether to create animated visualizations for single-example test sets
-        """
-        if not hasattr(self.model, 'loss_dictionary') or not self.model.loss_dictionary:
-            raise ValueError("No training data to visualize. Call train_model() first.")
-        
-        # Plot all standard metrics
-        self._plot_losses()
-        self._plot_accuracies()
-        self._plot_positive_accuracies()
-        self._plot_negative_accuracies()
-        
-        # Plot animations if requested
-        if animate:
-            self._plot_animations()
     
+    # --- Metrics plotting  ---
+
     def _plot_losses(self) -> None:
         """Plot training and test losses."""
         latex_title = self.experiment_parameters['latex_title']
@@ -317,4 +331,13 @@ class Experiment:
         plt.close(fig)
         display(HTML(anim.to_jshtml()))
 
-
+    # ================================================================
+    # 6. UTILITIES
+    # ================================================================
+    
+    @staticmethod
+    def print_info(string: str):
+        """Helper function to print information with formatting."""
+        print("\n" + "="*80)
+        print(string)
+        print("="*80 + "\n")
