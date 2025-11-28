@@ -60,9 +60,9 @@ class Experiment:
         self.dataset, self.model, self.trainer = self.setup_experiment_config()
         self.calculate_parameters()
         
-        if self.experiment_parameters.get('print_test_len', 
-                                          False):
-            print(len(self.dataset.test_data))
+        # if self.experiment_parameters.get('print_test_len', 
+        #                                   False):
+        #     print(len(self.dataset.test_data))
         self.train_model()
         self.visualize_experiment(animate=animate)
 
