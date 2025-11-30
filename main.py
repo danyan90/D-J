@@ -15,12 +15,13 @@ class Experiment:
     # 1. INITIALIZATION & CONFIGURATION
     # ================================================================
     
+    model: NegMLP
+    trainer: NegTrainer
+    dataset: DataObject
+    device: torch.device
+
     def __init__(self, config: dict): 
         self.experiment_parameters: dict = {} # Store experiment parameters
-        self.device: torch.device = None # Device will be set up later
-        self.dataset: DataObject = None
-        self.model: NegMLP = None
-        self.trainer: NegTrainer = None
 
         checked_config: dict = self.check_config(config)
         self.experiment_parameters.update(checked_config)
