@@ -9,6 +9,24 @@ from typing import Tuple, List
 from BadData_AppC import DataObject, AppendixCFunction
 from NegSamplingMath_Unlearn_AppC_FullDataSet import NegMLP, NegTrainer
 
+# ================================================================
+# Config format:
+# {
+#     'p': int,                # Modulus
+#     'c': int,                # Constant term in function
+#     'd': int,                # Degree of polynomial
+#     'embedding_dim': int,    # Embedding dimension for model
+#     'hidden': List[int],     # Hidden layer sizes for model
+#     'learning_rate': float,  # Learning rate for trainer
+#     'negs_per_ex': int,      # Number of negative samples per example
+#     'max_steps': int,        # Maximum training steps
+#     'batch_size': int,       # Batch size for training
+#     'weight_decay': float,   # Weight decay for optimizer
+#     'split': float,          # Train/test split ratio
+#     'latex_title': str       # LaTeX formatted title for plots
+# }
+# ================================================================
+
 
 class Experiment:
     # ================================================================
