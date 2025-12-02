@@ -294,9 +294,9 @@ class Experiment:
         rcParams['animation.embed_limit'] = 64  # MB limit for animations
         
         # Create individual animation plots
-        self._plot_histogram(latex_title, p)
-        self._plot_single_prediction_histogram(latex_title, p)
-        self._plot_probability_evolution(latex_title, p)
+        self._plot_histogram()
+        self._plot_single_prediction_histogram()
+        self._plot_probability_evolution()
     
     def _plot_histogram(self) -> None:
         """Plot histogram of all predictions."""
