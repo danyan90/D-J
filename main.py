@@ -16,7 +16,7 @@ from NegSamplingMath_Unlearn_AppC_FullDataSet import NegMLP, NegTrainer
 #     'c': List[int],          # Coefficients of polynomial
 #     'd': List[int],          # Degrees of polynomial
 #     'embedding_dim': int,    # Embedding dimension for model
-#     'hidden': List[int],     # Hidden layer sizes for model
+#     'hidden': int,           # Hidden layer size for model
 #     'learning_rate': float,  # Learning rate for trainer
 #     'negs_per_ex': int,      # Number of negative samples per example
 #     'max_steps': int,        # Maximum training steps
