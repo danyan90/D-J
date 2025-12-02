@@ -74,7 +74,7 @@ class Experiment:
             default is False
         """
         self.print_info(
-            f"Starting Experiment: {self.experiment_parameters['latex_title']} mod {self.experiment_parameters['p']}")
+            f"Starting Experiment: {self.latex_title} mod {self.p}")
 
         self.dataset, self.model, self.trainer = self.setup_experiment_config()
         self.calculate_parameters()
@@ -101,23 +101,23 @@ class Experiment:
         """
         self.device = self.check_device()
 
-        modular_function = AppendixCFunction(self.experiment_parameters['c'], 
-                                             self.experiment_parameters['d'], 
-                                             self.experiment_parameters['p'])
+        modular_function = AppendixCFunction(self.c, 
+                                             self.d, 
+                                             self.p)
         dataset = DataObject(modular_function, 
-                             split=self.experiment_parameters['split'])
+                             split=self.split)
 
-        model = NegMLP(self.experiment_parameters['p'], 
-                       self.experiment_parameters['embedding_dim'], 
-                       self.experiment_parameters['hidden'])
+        model = NegMLP(self.p, 
+                       self.embedding_dim, 
+                       self.hidden)
         
         if self.device is not None:
             model = model.to(self.device)
         else:
             model = model.to(torch.device("cpu")) # Fallback to CPU if no device is specified
 
-        trainer = NegTrainer(learning_rate=self.experiment_parameters['learning_rate'], 
-                             num_negs_per_example=self.experiment_parameters['negs_per_ex'])
+        trainer = NegTrainer(learning_rate=self.learning_rate, 
+                             num_negs_per_example=self.negs_per_ex)
         
         return dataset, model, trainer
     
@@ -139,8 +139,8 @@ class Experiment:
             raise ValueError("Model must be initialized before calculating parameters.")
         num_params, memory_mb = self.calculate_model_size()
         # print(f"Model size: {memory_mb:.2f} MB")
-        space_dim = (self.experiment_parameters['p'] ** 2) * 2**4
-        pos_dim = self.experiment_parameters['p'] ** 2
+        space_dim = (self.p ** 2) * 2**4
+        pos_dim = self.p ** 2
         # print(f"num_parameters: {num_params:,}; space_dim: {space_dim:,}; pos_dim: {pos_dim:,}")
         self.experiment_parameters.update({
             'num_parameters': num_params,
@@ -174,9 +174,9 @@ class Experiment:
         self.trainer.train_model(
             self.model,
             self.dataset,
-            max_steps=self.experiment_parameters['max_steps'],
-            batch_size=self.experiment_parameters['batch_size'],
-            weight_decay=self.experiment_parameters['weight_decay']
+            max_steps=self.max_steps,
+            batch_size=self.batch_size,
+            weight_decay=self.weight_decay
         )
     
     # ================================================================
@@ -233,8 +233,8 @@ class Experiment:
 
     def _plot_losses(self) -> None:
         """Plot training and test losses."""
-        latex_title = self.experiment_parameters['latex_title']
-        p = self.experiment_parameters['p']
+        latex_title = self.latex_title
+        p = self.p
         
         self.plot_metrics(
             data=[self.model.loss_dictionary['train_loss'], 
@@ -246,8 +246,8 @@ class Experiment:
     
     def _plot_accuracies(self) -> None:
         """Plot overall training and test accuracies."""
-        latex_title = self.experiment_parameters['latex_title']
-        p = self.experiment_parameters['p']
+        latex_title = self.latex_title
+        p = self.p
         
         self.plot_metrics(
             data=[self.model.loss_dictionary['train_accuracy'], 
@@ -259,8 +259,8 @@ class Experiment:
     
     def _plot_positive_accuracies(self) -> None:
         """Plot accuracies on positive examples only."""
-        latex_title = self.experiment_parameters['latex_title']
-        p = self.experiment_parameters['p']
+        latex_title = self.latex_title
+        p = self.p
         
         self.plot_metrics(
             data=[self.model.loss_dictionary['positive_train_accuracy'], 
@@ -272,8 +272,8 @@ class Experiment:
     
     def _plot_negative_accuracies(self) -> None:
         """Plot accuracies on negative examples only."""
-        latex_title = self.experiment_parameters['latex_title']
-        p = self.experiment_parameters['p']
+        latex_title = self.latex_title
+        p = self.p
         
         self.plot_metrics(
             data=[self.model.loss_dictionary['negative_train_accuracy'], 
@@ -298,8 +298,8 @@ class Experiment:
     def _plot_histogram(self) -> None:
         """Plot histogram of all predictions."""
         plt.figure(figsize=(10, 5))
-        plt.bar(range(self.experiment_parameters['p']), self.model.loss_dictionary['counts_hist_all'])
-        plt.title(f"Histogram: {self.experiment_parameters['latex_title']} mod {self.experiment_parameters['p']} for {self.dataset.test_data.tolist()}", 
+        plt.bar(range(self.p), self.model.loss_dictionary['counts_hist_all'])
+        plt.title(f"Histogram: {self.latex_title} mod {self.p} for {self.dataset.test_data.tolist()}", 
                   fontsize=10)
         plt.xlabel("Answer index")
         plt.ylabel("Prediction count")
@@ -309,8 +309,8 @@ class Experiment:
     def _plot_single_prediction_histogram(self) -> None:
         """Plot histogram for single prediction."""
         plt.figure(figsize=(10, 5))
-        plt.bar(range(self.experiment_parameters['p']), self.model.loss_dictionary['prediction_mike'])
-        plt.title(f"Single prediction: {self.experiment_parameters['latex_title']} mod {self.experiment_parameters['p']} for {self.dataset.test_data.tolist()}", 
+        plt.bar(range(self.p), self.model.loss_dictionary['prediction_mike'])
+        plt.title(f"Single prediction: {self.latex_title} mod {self.p} for {self.dataset.test_data.tolist()}", 
                   fontsize=10)
         plt.xlabel("Answer index")
         plt.ylabel("Count")
@@ -335,7 +335,7 @@ class Experiment:
         
         # Create animation
         fig, ax = plt.subplots(figsize=(8, 4))
-        ax.set_title(f"Probability evolution: {self.experiment_parameters['latex_title']} mod {self.experiment_parameters['p']} for {self.dataset.test_data.tolist()}", fontsize=10)   
+        ax.set_title(f"Probability evolution: {self.latex_title} mod {self.p} for {self.dataset.test_data.tolist()}", fontsize=10)   
         bars = ax.bar(range(len(probs[0])), probs[0])
         
         # Dynamic y-limit based on actual data
@@ -370,7 +370,69 @@ class Experiment:
     def __repr__(self):
         return f"Experiment({self.experiment_parameters})"
     
-
+    # ================================================================
+    # PROPERTIES FOR CONFIG PARAMETERS
+    # ================================================================
+    
+    @property
+    def p(self) -> int:
+        """Get modulus p."""
+        return self.experiment_parameters['p']
+    
+    @property
+    def c(self) -> List[int]:
+        """Get coefficients c."""
+        return self.experiment_parameters['c']
+    
+    @property
+    def d(self) -> List[int]:
+        """Get coefficients d."""
+        return self.experiment_parameters['d']
+    
+    @property
+    def embedding_dim(self) -> int:
+        """Get embedding dimension."""
+        return self.experiment_parameters['embedding_dim']
+    
+    @property
+    def hidden(self) -> int:
+        """Get hidden layer size."""
+        return self.experiment_parameters['hidden']
+    
+    @property
+    def learning_rate(self) -> float:
+        """Get learning rate."""
+        return self.experiment_parameters['learning_rate']
+    
+    @property
+    def negs_per_ex(self) -> int:
+        """Get number of negative samples per example."""
+        return self.experiment_parameters['negs_per_ex']
+    
+    @property
+    def max_steps(self) -> int:
+        """Get maximum training steps."""
+        return self.experiment_parameters['max_steps']
+    
+    @property
+    def batch_size(self) -> int:
+        """Get batch size."""
+        return self.experiment_parameters['batch_size']
+    
+    @property
+    def weight_decay(self) -> float:
+        """Get weight decay."""
+        return self.experiment_parameters['weight_decay']
+    
+    @property
+    def split(self) -> float:
+        """Get train/test split ratio."""
+        return self.experiment_parameters['split']
+    
+    @property
+    def latex_title(self) -> str:
+        """Get LaTeX formatted title."""
+        return self.experiment_parameters['latex_title']
 
 if __name__ == "__main__":
     # Run example experiment
