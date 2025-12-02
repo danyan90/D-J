@@ -78,6 +78,11 @@ class Experiment:
 
         self.dataset, self.model, self.trainer = self.setup_experiment_config()
         self.calculate_parameters()
+
+        print(f"\nModel: {self.experiment_parameters['num_parameters']:,} parameters")
+        print(f"Memory: {self.experiment_parameters['memory_mb']:.2f} MB")
+        print(f"Space: {self.experiment_parameters['space_dim']:,} dimensions\n")
+        
         
         # if self.experiment_parameters.get('print_test_len', 
         #                                   False):
@@ -123,13 +128,13 @@ class Experiment:
     
     def check_device(self) -> torch.device: # for Mac mps 
         if torch.backends.mps.is_available():
-            device = torch.device("mps")
+            device = torch.device("MPS")
 
         elif torch.cuda.is_available():
-            device = torch.device("cuda")
+            device = torch.device("CUDA")
             
         else:
-            device = torch.device("cpu")
+            device = torch.device("CPU")
         print(f"Using device: {device}")
         return device
 
