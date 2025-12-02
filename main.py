@@ -366,3 +366,8 @@ class Experiment:
         print("\n" + "="*80)
         print(string)
         print("="*80 + "\n")
+
+    def __repr__(self):
+        return f"Experiment({self.experiment_parameters})"
+    
+
