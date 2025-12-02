@@ -13,8 +13,8 @@ from NegSamplingMath_Unlearn_AppC_FullDataSet import NegMLP, NegTrainer
 # Config format:
 # {
 #     'p': int,                # Modulus
-#     'c': int,                # Constant term in function
-#     'd': int,                # Degree of polynomial
+#     'c': List[int],          # Coefficients of polynomial
+#     'd': List[int],          # Degrees of polynomial
 #     'embedding_dim': int,    # Embedding dimension for model
 #     'hidden': List[int],     # Hidden layer sizes for model
 #     'learning_rate': float,  # Learning rate for trainer
@@ -287,9 +287,6 @@ class Experiment:
         """Create animated visualizations for single-example test sets."""
         if len(self.dataset.test_data) != 1:
             return  # Only animate for single-example test sets
-        
-        latex_title = self.experiment_parameters['latex_title']
-        p = self.experiment_parameters['p']
         
         rcParams['animation.embed_limit'] = 64  # MB limit for animations
         
