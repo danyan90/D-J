@@ -24,9 +24,6 @@ config = {
 
 exp = Experiment(config)
 exp.run(animate=False)
-
-print(f"Accuracy: {exp.final_accuracy:.4f}")
-print(f"Parameters: {exp.model_size:,}")
 ```
 
 ## Configuration
