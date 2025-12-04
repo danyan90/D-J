@@ -47,7 +47,7 @@ exp.run(animate=False)
 
 The target function is a modular polynomial defined as:
 
-$$f(x, y) = \left( \left( c_0 \cdot x^{d_0} + c_1 \cdot y^{d_1} \right)^{d_2} + c_2 \cdot x^{d_3} \cdot y^{d_4} \right) \bmod p$$
+$f(x, y) = \left( \left( c_0 \cdot x^{d_0} + c_1 \cdot y^{d_1} \right)^{d_2} + c_2 \cdot x^{d_3} \cdot y^{d_4} \right) \bmod p$
 
 **Components:**
 
