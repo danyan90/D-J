@@ -9,6 +9,22 @@ from typing import Tuple, List
 from BadData_AppC import DataObject, AppendixCFunction
 from NegSamplingMath_Unlearn_AppC_FullDataSet import NegMLP, NegTrainer
 
+import time
+from functools import wraps
+
+def timing(func):
+    """Decorator to measure function execution time."""
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        start = time.time()
+        result = func(self, *args, **kwargs)
+        elapsed = time.time() - start
+        elapsed_in_ms = elapsed * 1000
+        print(f"{func.__name__:30s} executed in {elapsed:10.2f} s")
+        # print(f"{func.__name__:30s} executed in {elapsed_in_ms:10.2f} ms")
+        return result
+    return wrapper
+
 # ================================================================
 # Config format:
 # {
@@ -66,6 +82,7 @@ class Experiment:
     # 2. MAIN EXPERIMENT METHODS
     # ================================================================
     
+    @timing
     def run(self, animate: bool = False) -> None:
         """Execute full experiment pipeline: setup, train, and visualize.
         
