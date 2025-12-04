@@ -46,7 +46,7 @@ class Experiment:
 
     def check_config(self, config: dict) -> dict:
         required_keys = ('p', 
-                         'c', 
+                         'c',
                          'd', 
                          'embedding_dim', 
                          'hidden', 
@@ -128,13 +128,13 @@ class Experiment:
     
     def check_device(self) -> torch.device: # for Mac mps 
         if torch.backends.mps.is_available():
-            device = torch.device("MPS")
+            device = torch.device("mps")
 
         elif torch.cuda.is_available():
-            device = torch.device("CUDA")
+            device = torch.device("cuda")
             
         else:
-            device = torch.device("CPU")
+            device = torch.device("cpu")
         print(f"Using device: {device}")
         return device
 
