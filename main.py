@@ -19,7 +19,7 @@ def timing(func):
         start = time.time()
         result = func(self, *args, **kwargs)
         elapsed = time.time() - start
-        elapsed_in_ms = elapsed * 1000
+        # elapsed_in_ms = elapsed * 1000
         print(f"{func.__name__:30s} executed in {elapsed:10.2f} s")
         # print(f"{func.__name__:30s} executed in {elapsed_in_ms:10.2f} ms")
         return result
