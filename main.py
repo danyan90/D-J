@@ -58,6 +58,88 @@ class ModularFunction:
         d1, d2, d3, d4, d5 = self.d
         return ((c1*(x**d1) + c2*(y**d2))**d3 + c3*(x**d4)*(y**d5)) % self.p
     
+    @property
+    def latex_title(self) -> str:
+        """Generate LaTeX representation from coefficients automatically."""
+        c1, c2, c3 = self.c
+        d1, d2, d3, d4, d5 = self.d
+        
+        if c1 == 0:
+            x_part = ""
+        elif c1 == 1 and d1 == 1:
+            x_part = "x"
+        elif c1 == 1:
+            x_part = f"x^{{{d1}}}"
+        elif d1 == 1:
+            x_part = f"{c1}x"
+        else:
+            x_part = f"{c1}x^{{{d1}}}"
+
+        if c2 == 0:
+            y_part = ""
+        elif c2 == 1 and d2 == 1:
+            y_part = "y"
+        elif c2 == 1:
+            y_part = f"y^{{{d2}}}"
+        elif d2 == 1:
+            y_part = f"{c2}y"
+        else:
+            y_part = f"{c2}y^{{{d2}}}"
+
+        # Build the sum part with proper sign handling
+        if x_part and y_part:
+            operator = " " if str(c2).startswith('-') else " + "
+            sum_part = f"{x_part}{operator}{y_part}"
+        elif x_part:
+            sum_part = x_part
+        elif y_part:
+            sum_part = y_part
+        else:
+            sum_part = "0"
+
+        # Build outer expression
+        if d3 == 0:
+            outer = "1"
+        elif d3 == 1:
+            outer = sum_part
+        else:
+            outer = f"({sum_part})^{{{d3}}}"
+
+        # Build additional term with proper sign handling
+        if c3 != 0:
+            # Build the c3 part (with coefficient)
+            if c3 == 1:
+                c3_str = ""  # Omit coefficient 1
+            elif c3 == -1:
+                c3_str = "-"  # Just the minus sign
+            else:
+                c3_str = str(c3)
+            
+            # Build the xy part
+            if d4 == 0 and d5 == 0:
+                xy_part = "1"
+            elif d4 == 0:
+                xy_part = f"y^{{{d5}}}" if d5 != 1 else "y"
+            elif d5 == 0:
+                xy_part = f"x^{{{d4}}}" if d4 != 1 else "x"
+            elif d4 == 1 and d5 == 1:
+                xy_part = "xy"
+            elif d4 == 1:
+                xy_part = f"xy^{{{d5}}}"
+            elif d5 == 1:
+                xy_part = f"x^{{{d4}}}y"
+            else:
+                xy_part = f"x^{{{d4}}}y^{{{d5}}}"
+            
+            # Combine with sign
+            sign = " + " if c3 > 0 else " "
+            term = f"{sign}{c3_str}{xy_part}"
+        else:
+            term = ""
+        
+        return f"$f(x, y) = {outer}{term} \\,\\, mod \\,\\, {self.p}$"
+
+
 
 class Experiment:
     # ================================================================
