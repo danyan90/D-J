@@ -150,6 +150,7 @@ class Experiment:
     trainer: NegTrainer
     dataset: DataObject
     device: torch.device
+    latex_title: str
 
     def __init__(self, config: dict): 
         self.experiment_parameters: dict = {} # Store experiment parameters
