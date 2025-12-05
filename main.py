@@ -6,7 +6,7 @@ from IPython.display import display, HTML
 import torch
 from typing import Tuple, List
 
-from BadData_AppC import DataObject, AppendixCFunction
+from BadData_AppC import DataObject
 from NegSamplingMath_Unlearn_AppC_FullDataSet import NegMLP, NegTrainer
 
 import time
@@ -138,7 +138,7 @@ class Experiment:
         """
         self.device = self.check_device()
 
-        modular_function = AppendixCFunction(self.c, 
+        modular_function = ModularFunction(self.c, 
                                              self.d, 
                                              self.p)
         dataset = DataObject(modular_function, 
