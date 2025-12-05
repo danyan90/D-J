@@ -476,20 +476,18 @@ if __name__ == "__main__":
 
 
     config = {
-    # Polynomial (4*x + y**2)**3 % 17
-    "p": 17, 
-    "c": [4, 1, 0], 
-    "d": [1, 2, 3, 0, 0], 
-    "latex_title": r"$(4x + y^2)^3$",
-    "max_steps": 1000,
-    "learning_rate": 0.005,
-    "batch_size": 1024,
-    "weight_decay": 1e-4,
-    "embedding_dim": 2**7, 
-    "hidden": 500, 
-    "split": 0.99999,
-    "negs_per_ex": 20
-}
+        "p": 17, 
+        "c": [4, 1, 0], 
+        "d": [1, 2, 3, 0, 0], 
+        "max_steps": 50,              
+        "learning_rate": 0.005,
+        "batch_size": 128,            
+        "weight_decay": 1e-4,
+        "embedding_dim": 2**5,        
+        "hidden": 128,               
+        "split": 0.99999,
+        "negs_per_ex": 5              
+        }
 
     
     experiment = Experiment(config)
