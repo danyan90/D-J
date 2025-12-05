@@ -10,7 +10,7 @@ from main import Experiment
 config = {
     'p': 17,
     'c': [4, 1, 0],
-    'd': [1, 2, 3],
+    'd': [1, 2, 3, 0, 0],
     'embedding_dim': 128,
     'hidden': 500,
     'learning_rate': 0.005,
@@ -19,7 +19,6 @@ config = {
     'weight_decay': 1e-4,
     'split': 0.99999,
     'negs_per_ex': 20,
-    'latex_title': r'$(4x + y^2)^3$ mod p',
 }
 
 exp = Experiment(config)
@@ -31,8 +30,8 @@ exp.run(animate=False)
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `p` | int | - | Prime modulus (>= 2) |
-| `c` | list | - | Polynomial coefficients |
-| `d` | list | - | Polynomial degrees |
+| `c` | list | - | Polynomial coefficients [c0, c1, c2] |
+| `d` | list | - | Polynomial degrees [d0, d1, d2, d3, d4] |
 | `embedding_dim` | int | - | Embedding dimension |
 | `hidden` | int | - | Hidden layer size |
 | `learning_rate` | float | - | Learning rate |
@@ -41,7 +40,6 @@ exp.run(animate=False)
 | `weight_decay` | float | - | L2 regularization |
 | `split` | float | - | Train/test ratio (0-1) |
 | `negs_per_ex` | int | - | Negative samples per example |
-| `latex_title` | str | - | Experiment title |
 
 ### Polynomial Function (c and d parameters)
 
@@ -94,8 +92,12 @@ Generated plots:
 
 - Training and test loss curves
 - Overall accuracy curves
-- Positive/negative example accuracies
-- (If `animate=True` and single test example): probability evolution animation
+- Positive example accuracies
+- Negative example accuracies
+- (If `animate=True` and single test example): 
+  - Histogram of all predictions
+  - Single prediction histogram
+  - Probability distribution evolution animation
 
 ## Device Support
 
