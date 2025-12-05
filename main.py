@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from matplotlib.animation import FuncAnimation
-from IPython.display import display, HTML
+from IPython.display import display, HTML, Markdown
 import torch
 from typing import Tuple, List
 
@@ -400,9 +400,14 @@ class Experiment:
     @staticmethod
     def print_info(string: str):
         """Helper function to print information with formatting."""
-        print("\n" + "="*80)
-        print(string)
-        print("="*80 + "\n")
+        try:
+            # Use display for Jupyter notebooks
+            display(Markdown(string))
+        except NameError:
+            # Fallback to print for regular Python
+            print("\n" + "="*80)
+            print(string)
+            print("="*80 + "\n")
 
     def __repr__(self):
         return f"Experiment({self.experiment_parameters})"
