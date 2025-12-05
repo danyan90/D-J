@@ -43,6 +43,21 @@ def timing(func):
 # }
 # ================================================================
 
+class ModularFunction:
+    #Here we define a modular polynomial of the form 
+    # (c1*x^d1 + c2*x^d2)^d3 + c3*x^d4*x^d5. 
+    # So we take c = [c1 c2 c3] and d = [d1 d2 d3 d4 d5]
+    
+    def __init__(self, c: int, d: int, p: int):
+        self.c = c
+        self.d = d
+        self.p = p
+
+    def __call__(self, x: int, y: int):
+        c1, c2, c3 = self.c
+        d1, d2, d3, d4, d5 = self.d
+        return ((c1*(x**d1) + c2*(y**d2))**d3 + c3*(x**d4)*(y**d5)) % self.p
+    
 
 class Experiment:
     # ================================================================
