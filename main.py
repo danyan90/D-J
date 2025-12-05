@@ -39,7 +39,7 @@ def timing(func):
 #     'batch_size': int,       # Batch size for training
 #     'weight_decay': float,   # Weight decay for optimizer
 #     'split': float,          # Train/test split ratio
-#     'latex_title': str       # LaTeX formatted title for plots
+#     'latex_title': str       # LaTeX formatted title for plots ## DEPRECATED ##
 # }
 # ================================================================
 
@@ -170,7 +170,8 @@ class Experiment:
                          'batch_size', 
                          'weight_decay',
                          'split', 
-                         'latex_title')
+                        #  'latex_title'  ## DEPRECATED ##
+                         )
         for key in required_keys:
             if key not in config:
                 raise ValueError(f"Missing required config key: {key}")
@@ -188,8 +189,8 @@ class Experiment:
             animate: Whether to create animated visualizations (only for single-example test sets), 
             default is False
         """
-        self.print_info(
-            f"Starting Experiment: {self.latex_title} mod {self.p}")
+        # self.print_info(
+        #     f"Starting Experiment: {self.latex_title} mod {self.p}")  ## Moved to setup_experiment_config() ##
 
         self.dataset, self.model, self.trainer = self.setup_experiment_config()
         self.calculate_parameters()
@@ -226,6 +227,11 @@ class Experiment:
                                              self.p)
         dataset = DataObject(modular_function, 
                              split=self.split)
+        
+        self.latex_title = modular_function.latex_title
+
+        self.print_info(
+            f"Starting Experiment: {self.latex_title}")
 
         model = NegMLP(self.p, 
                        self.embedding_dim, 
@@ -353,54 +359,46 @@ class Experiment:
 
     def _plot_losses(self) -> None:
         """Plot training and test losses."""
-        latex_title = self.latex_title
-        p = self.p
         
         self.plot_metrics(
             data=[self.model.loss_dictionary['train_loss'], 
                   self.model.loss_dictionary['test_loss']],
             labels=["Train Loss", "Test Loss"],
             y_label="Loss",
-            title=f"Loss: {latex_title} mod {p}"
+            title=f"Loss for {self.latex_title}"
         )
     
     def _plot_accuracies(self) -> None:
         """Plot overall training and test accuracies."""
-        latex_title = self.latex_title
-        p = self.p
         
         self.plot_metrics(
             data=[self.model.loss_dictionary['train_accuracy'], 
                   self.model.loss_dictionary['test_accuracy']],
             labels=["Train Accuracy", "Test Accuracy"],
             y_label="Accuracy",
-            title=f"Accuracy: {latex_title} mod {p}"
+            title=f"Accuracy for {self.latex_title}"
         )
     
     def _plot_positive_accuracies(self) -> None:
         """Plot accuracies on positive examples only."""
-        latex_title = self.latex_title
-        p = self.p
         
         self.plot_metrics(
             data=[self.model.loss_dictionary['positive_train_accuracy'], 
                   self.model.loss_dictionary['positive_test_accuracy']],
             labels=["Train Accuracy (positive)", "Test Accuracy (positive)"],
             y_label="Accuracy",
-            title=f"Positive examples: {latex_title} mod {p}"
+            title=f"Positive examples for {self.latex_title}"
         )
     
     def _plot_negative_accuracies(self) -> None:
         """Plot accuracies on negative examples only."""
-        latex_title = self.latex_title
-        p = self.p
         
         self.plot_metrics(
             data=[self.model.loss_dictionary['negative_train_accuracy'], 
                   self.model.loss_dictionary['negative_test_accuracy']],
             labels=["Train Accuracy (negative)", "Test Accuracy (negative)"],
             y_label="Accuracy",
-            title=f"Negative examples: {latex_title} mod {p}"
+            title=f"Negative examples for {self.latex_title}"
         )
     
     def _plot_animations(self) -> None:
@@ -419,7 +417,7 @@ class Experiment:
         """Plot histogram of all predictions."""
         plt.figure(figsize=(10, 5))
         plt.bar(range(self.p), self.model.loss_dictionary['counts_hist_all'])
-        plt.title(f"Histogram: {self.latex_title} mod {self.p} for {self.dataset.test_data.tolist()}", 
+        plt.title(f"Histogram: {self.latex_title} for {self.dataset.test_data.tolist()}", 
                   fontsize=10)
         plt.xlabel("Answer index")
         plt.ylabel("Prediction count")
@@ -430,7 +428,7 @@ class Experiment:
         """Plot histogram for single prediction."""
         plt.figure(figsize=(10, 5))
         plt.bar(range(self.p), self.model.loss_dictionary['prediction_mike'])
-        plt.title(f"Single prediction: {self.latex_title} mod {self.p} for {self.dataset.test_data.tolist()}", 
+        plt.title(f"Single prediction: {self.latex_title} for {self.dataset.test_data.tolist()}", 
                   fontsize=10)
         plt.xlabel("Answer index")
         plt.ylabel("Count")
@@ -455,7 +453,7 @@ class Experiment:
         
         # Create animation
         fig, ax = plt.subplots(figsize=(8, 4))
-        ax.set_title(f"Probability evolution: {self.latex_title} mod {self.p} for {self.dataset.test_data.tolist()}", fontsize=10)   
+        ax.set_title(f"Probability evolution: {self.latex_title} for {self.dataset.test_data.tolist()}", fontsize=10)   
         bars = ax.bar(range(len(probs[0])), probs[0])
         
         # Dynamic y-limit based on actual data
@@ -554,10 +552,6 @@ class Experiment:
         """Get train/test split ratio."""
         return self.experiment_parameters['split']
     
-    @property
-    def latex_title(self) -> str:
-        """Get LaTeX formatted title."""
-        return self.experiment_parameters['latex_title']
 
 if __name__ == "__main__":
     # Run example experiment
