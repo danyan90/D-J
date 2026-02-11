@@ -281,6 +281,7 @@ class Trainer:
             train_data_batch = train_data[idx][:batch_size]
             self.fit(model, train_data_batch, optimizer, scheduler)
             self.evaluate(model, dataset.test_data.to(device), other_set=other_data)
+            self.get_pre_and_post_activations(model, dataset.dataset.to(device))
             make_time_dict(i+1, model.loss_dictionary, model.time_dictionary)
 
             if print_losses:
@@ -312,6 +313,9 @@ class Trainer:
 
         model.loss_dictionary['train_loss'].append(train_loss.detach().clone().item())
         model.loss_dictionary['train_accuracy'].append(train_accuracy.detach().clone().item())
+        model.loss_dictionary['embedding_matrix'].append(model.embed.weight.detach().cpu().clone())
+        model.loss_dictionary['Layer1_weights'].append(model.linear1.weight.detach().cpu().clone())
+        model.loss_dictionary['Layer2_weights'].append(model.linear2.weight.detach().cpu().clone())
 
     def evaluate(self, model, test_set, other_set=None):
         """
@@ -338,6 +342,16 @@ class Trainer:
                 model.loss_dictionary['counts_hist'][pred_class] += 1
                 model.loss_dictionary['prob_dist'].append(probs)
 
+    def get_pre_and_post_activations(self, model, test_set):
+        """Forward pass just to obtain (pre)activations"""
+        model.eval()
+        with torch.no_grad():
+            preact1, act1, preact2 = model(test_set, return_act = True)
+            model.loss_dictionary['preactivations'].append(preact1.detach().cpu())
+            model.loss_dictionary['activations'].append(act1.detach().cpu()) 
+            model.loss_dictionary['logit_vectors'].append(preact2.detach().cpu()) 
+
+
     def get_loss_and_accuracy(self, model, data):
         """Compute losses and accuracies in fit and evaluate functions."""
         # Shape of data: (B, 3)
@@ -352,7 +366,7 @@ class Trainer:
             loss = self.criterion(y_hat, one_hot_y) * model.p
         accuracy = accuracy_function(y_hat.detach().clone(), one_hot_y)
         #print(loss)
-        #print(accuracy) 
+        #print(accuracy)
         return loss, accuracy
 
 
@@ -427,3 +441,41 @@ class Overlap(nn.Module):
         logits = self.proj(h)     # (B, p)
         return logits
     
+class Classification(nn.Module):
+    def __init__(self, p, embedding_dim, hidden, activation = Activation, model_seed=8675309):
+        super().__init__()
+        self.p = p
+        torch.manual_seed(model_seed)
+        self.embed = nn.Embedding(p, embedding_dim)
+        self.linear1 = nn.Linear(2 * embedding_dim, hidden)
+        self.activation = activation()
+        self.linear2 = nn.Linear(hidden, p)
+
+        self.loss_dictionary = {
+            'train_loss': [], 'train_accuracy': [],
+            'test_loss': [],  'test_accuracy': [],
+            'other_loss': [], 'other_accuracy': [],
+            'counts_hist': torch.zeros(self.p, dtype=int), 'prob_dist': [],
+            'prediction': [], 'embedding_matrix': [],
+            'Layer1_weights': [], 'Layer2_weights': [],
+            'preactivations': [], 'activations': [],
+            "logit_vectors": []
+        }
+        self.time_dictionary = {'mem': [float('inf'), float('inf')],
+                                'gen': [float('inf'), float('inf')]} 
+        
+    def forward(self, x, return_act = False):
+        # x: (B, 2)
+        e = self.embed(x)         # (B, 2, d)
+        e1, e2 = e[:, 0, :], e[:, 1, :]
+        #h = torch.cat([e1, e2, e1 * e2], dim=-1)  # <-- interaction term
+        h = torch.cat([e1, e2], dim=-1)  # <-- no interaction term
+        h1 = self.linear1(h)
+        act1 = self.activation(h1)
+        h2 = self.linear2(act1)
+        logits = h2
+
+        if return_act:
+            return h1, act1, h2
+        else:
+            return logits

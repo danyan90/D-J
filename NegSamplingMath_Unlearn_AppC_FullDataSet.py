@@ -69,7 +69,7 @@ class NegMLP(nn.Module):
                  embedding_dim,
                  mlp_dim,
                  activation=ActPoly(m=2),
-                 model_seed=8675309):
+                 model_seed=8676309):      #original:8675309
         super().__init__()
         self.p = p
         self.embedding_dim = embedding_dim
@@ -85,23 +85,28 @@ class NegMLP(nn.Module):
                                 'test_accuracy': [], 'positive_train_accuracy': [], 
                                 'negative_train_accuracy': [],'positive_test_accuracy': [], 
                                 'negative_test_accuracy': [], 'counts_hist_all': torch.zeros(self.p, dtype=int), 
-                                'prediction_mike': torch.zeros(self.p, dtype=int), 'sorta_prob_dist': []}
+                                'prediction_mike': torch.zeros(self.p, dtype=int), 'sorta_prob_dist': [],
+                                'embedding_matrix': [], 'context_vecs': [], 'Layer1_weights': [],
+                                'Layer2_weights': [], 'preactivations': [], 'activations': []}
 
-    def forward(self, x):
+    def forward(self, x, return_act = False):
         # Shape of x: (b, 3)
         b, _ = x.shape
         x = self.embed(x) # Shape of x: (b, 3, embedding_dim)
         y = x[:, -1, :]
         x = x[:, :2, :]
         x = x.reshape(b, -1) # Concatenates x to have shape: (b, 2 * embedding_dim)
-        x = self.linear1(x) # Shape of x: (b, mlp_dim)
-        x = self.activation(x)
-        x = self.linear2(x) # Shape of x: (b, embedding_dim)
-        # The following two lines implement batch dot product using @ operator
-        x = x[:, None, :] # Shape of x: (b, 1, embedding_dim)
+        h1 = self.linear1(x) # Shape of h1: (b, mlp_dim) (first layer preactivations)
+        act1 = self.activation(h1) #(first layer activations)
+        h2 = self.linear2(act1) # Shape of h2: (b, embedding_dim)
+        # The following lines implement batch dot product using @ operator
+        x = h2[:, None, :] # Shape of x: (b, 1, embedding_dim)
         y = y[..., None] # Shape of y: (b, embedding_dim, 1)
-        return (x @ y).squeeze() # Shape of out: (b)
 
+        if return_act:
+            return h1, act1, h2 # Shape of out: preactivations with shape (b, mlp_dim), activations with shape (b, mlp_dim),  context vectors with shape of: (b, embedding_dim)
+        else:
+            return (x @ y).squeeze() # Shape of out: (b)
 
 class NegTrainer:
     """Training class."""
@@ -122,59 +127,71 @@ class NegTrainer:
         if self.optimizer_name == 'AdamW':  # optional but recommended
             return torch.optim.AdamW(model.parameters(), lr=self.learning_rate, weight_decay=weight_decay)
         raise ValueError("Try again: optimizer options are 'Adam', 'AdamW', and 'SGD'.")
-    
-    #This function evaluates the model over the positive and negative examples in the train data only! Updates the train accuracy
-    def evaluate_train(self, model, train_examples, labels_train, a , b):
+            
+    #This function evaluates the model over the train and test data set.
+    def evaluate_train_and_test(self, model, train_examples, 
+                                labels_train, num_pos_train , 
+                                num_neg_train, test_examples, 
+                                labels_test, num_pos_test, 
+                                num_neg_test):
         model.eval()
         with torch.no_grad():
-            outputs = model(train_examples)
-            probs = torch.sigmoid(outputs) 
-            preds = (probs >= 0.5).int()
-            accuracy = (preds == labels_train).float().mean().item()
-            positive_accuracy = (preds[:a] == labels_train[:a]).float().mean().item()
-            negative_accuracy = (preds[-b:] == labels_train[-b:]).float().mean().item()
-            model.loss_dictionary['train_accuracy'].append(accuracy)
-            #Accuracy only on positives:
-            model.loss_dictionary['positive_train_accuracy'].append(positive_accuracy)
-            #Accuracy only on negatives:
-            model.loss_dictionary['negative_train_accuracy'].append(negative_accuracy)
 
-    #This function evaluates the model over the positive and negative examples in the train data only! Updates the train accuracy
-    def evaluate_test(self, model, test_examples, labels_test, c, d):
-        model.eval()
-        with torch.no_grad():
-            outputs = model(test_examples)
-            probs = torch.sigmoid(outputs)  
-            preds = (probs >= 0.5).int()
-            accuracy = (preds == labels_test).float().mean().item()
-            positive_accuracy = (preds[:c] == labels_test[:c]).float().mean().item()
-            negative_accuracy = (preds[-d:] == labels_test[-d:]).float().mean().item()
-            model.loss_dictionary['test_accuracy'].append(accuracy)
+            #Train evaluation
+            outputs_train= model(train_examples)
+            probs_train = torch.sigmoid(outputs_train) 
+            preds_train = (probs_train >= 0.5).int()
+            accuracy_train = (preds_train == labels_train).float().mean().item()
+            positive_accuracy_train = (preds_train[:num_pos_train] == labels_train[:num_pos_train]).float().mean().item()
+            negative_accuracy_train = (preds_train[-num_neg_train:] == labels_train[-num_neg_train:]).float().mean().item()
+            model.loss_dictionary['train_accuracy'].append(accuracy_train)
+            #Accuracy only on positives:
+            model.loss_dictionary['positive_train_accuracy'].append(positive_accuracy_train)
+            #Accuracy only on negatives:
+            model.loss_dictionary['negative_train_accuracy'].append(negative_accuracy_train)
+
+
+            #Test evaluation
+            outputs_test = model(test_examples)
+            probs_test = torch.sigmoid(outputs_test)  
+            preds_test = (probs_test >= 0.5).int()
+            accuracy_test = (preds_test == labels_test).float().mean().item()
+            positive_accuracy_test = (preds_test[:num_pos_test] == labels_test[:num_pos_test]).float().mean().item()
+            negative_accuracy_test = (preds_test[-num_neg_test:] == labels_test[-num_neg_test:]).float().mean().item()
+            model.loss_dictionary['test_accuracy'].append(accuracy_test)
             #For test loss
-            loss = torch.nn.functional.binary_cross_entropy_with_logits(outputs, labels_test)
+            loss = torch.nn.functional.binary_cross_entropy_with_logits(outputs_test, labels_test)
             model.loss_dictionary['test_loss'].append(loss.item())
             #Accuracy only on positives:
-            model.loss_dictionary['positive_test_accuracy'].append(positive_accuracy)
+            model.loss_dictionary['positive_test_accuracy'].append(positive_accuracy_test)
             #Accuracy only on negatives:
-            model.loss_dictionary['negative_test_accuracy'].append(negative_accuracy)
+            model.loss_dictionary['negative_test_accuracy'].append(negative_accuracy_test)        
 
             #In the case of our experiment where we restrict the test data to a single data point, we ask our model to make a prediction for which (a,b,c) is correct.
             #Multiple (a,b,c) triples may be predicted as correct. So we have a histogram where we log all triples counted true, and a histogram where we collect the triple with greatest probability
-            if c == 1:
+            if num_pos_test == 1:
                 last_elements = test_examples[:, -1]
                 sort_indices = torch.argsort(last_elements)
                 test_examples = test_examples[sort_indices]
-                preds = preds[sort_indices]
-                probs = probs[sort_indices]
-                model.loss_dictionary['counts_hist_all'] += preds.detach().cpu()
-                max_prob = torch.max(probs)
-                model.loss_dictionary['prediction_mike'] += torch.where(probs == max_prob, 1, 0).detach().cpu()
+                preds_test = preds_test[sort_indices]
+                probs_test = probs_test[sort_indices]
+                model.loss_dictionary['counts_hist_all'] += preds_test.detach().cpu()
+                max_prob = torch.max(probs_test)
+                model.loss_dictionary['prediction_mike'] += torch.where(probs_test == max_prob, 1, 0).detach().cpu()
                 #Produce sorta probability distribution
-                sum = torch.sum(probs)
-                prob_dist = probs / sum
+                sum = torch.sum(probs_test)
+                prob_dist = probs_test / sum
                 model.loss_dictionary['sorta_prob_dist'].append(prob_dist.detach().cpu())
-            
 
+    # This funtion does the forward pass specifically to collect the (pre)activations
+    def get_pre_and_post_activations(self, model, test_set):
+        """Forward pass just to obtain (pre)activations"""
+        model.eval()
+        with torch.no_grad():
+            preact1, act1, preact2 = model(test_set, return_act = True)
+            model.loss_dictionary['preactivations'].append(preact1.detach().cpu())
+            model.loss_dictionary['activations'].append(act1.detach().cpu()) 
+            model.loss_dictionary['context_vecs'].append(preact2.detach().cpu()) 
 
 
 
@@ -214,8 +231,8 @@ class NegTrainer:
             torch.ones(len(pos_examples), dtype=torch.float),
             torch.zeros(len(negs_for_train), dtype=torch.float)
         ]).to(device)
-        a = len(pos_examples)
-        b = len(negs_for_train)
+        num_pos_train = len(pos_examples)
+        num_neg_train = len(negs_for_train)
 
         #Get the negatives for evaluation on test
         pos_for_test = dataset.test_data
@@ -234,8 +251,8 @@ class NegTrainer:
             torch.ones(len(pos_for_test), dtype=torch.float),
             torch.zeros(len(negs_for_test), dtype=torch.float)
         ]).to(device)
-        c = len(pos_for_test)
-        d = len(negs_for_test)
+        num_pos_test = len(pos_for_test)
+        num_neg_test = len(negs_for_test)
         #counts_hist_all = torch.zeros(c+d)
         #prediction_mike = torch.zeros(c+d)
 
@@ -247,8 +264,14 @@ class NegTrainer:
             pos_examples_batch = pos_examples[idx][:batch_size].to(device)
             neg_examples_batch = self.get_negatives(pos_examples_batch, neg_examples_dict).to(device)
             self.fit(model, pos_examples_batch, neg_examples_batch)
-            self.evaluate_train(model, train_examples, labels_train, a , b)
-            self.evaluate_test(model, test_examples, labels_test, c , d)
+            #self.evaluate_train(model, train_examples, labels_train, a , b)
+            #self.evaluate_test(model, test_examples, labels_test, c , d)
+            self.evaluate_train_and_test(model, train_examples, 
+                                labels_train, num_pos_train , 
+                                num_neg_train, test_examples, 
+                                labels_test, num_pos_test, 
+                                num_neg_test)
+            self.get_pre_and_post_activations(model, dataset.dataset.to(device))
 
             if print_loss:
                 print_losses(max_steps, i + 1, model.loss_dictionary)
@@ -268,8 +291,10 @@ class NegTrainer:
         """Perform one optimization step."""
         model.train()
         p, n = pos_set.shape[0], neg_set.shape[0]
-        pos_loss = - torch.log(torch.sigmoid(model(pos_set))).sum()
-        neg_loss = - torch.log(torch.sigmoid(- model(neg_set))).sum()
+        pos_out = model(pos_set)
+        neg_out = model(neg_set)
+        pos_loss = - torch.log(torch.sigmoid(pos_out)).sum()
+        neg_loss = - torch.log(torch.sigmoid(- neg_out)).sum()
         # pos = torch.sigmoid(model(pos_set))
         # neg = torch.sigmoid(model(neg_set))
         total_loss = (pos_loss + (p / n) * neg_loss) / (2 * p) # Weighted: pos and neg contribute equally
@@ -279,6 +304,9 @@ class NegTrainer:
         total_loss.backward()
         self.optimizer.step()
         model.loss_dictionary['train_loss'].append(total_loss.detach().clone().item())
+        model.loss_dictionary['embedding_matrix'].append(model.embed.weight.detach().cpu().clone())
+        model.loss_dictionary['Layer1_weights'].append(model.linear1.weight.detach().cpu().clone())
+        model.loss_dictionary['Layer2_weights'].append(model.linear2.weight.detach().cpu().clone())
 
 def accuracy(pos_output=None, neg_output=None):
     with torch.no_grad():
